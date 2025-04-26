@@ -1,21 +1,5 @@
-// // app/api/auth/[...nextauth]/route.ts
-// import NextAuth, { NextAuthOptions } from "next-auth"
-// import GoogleProvider from "next-auth/providers/google"
 
-// const handler: NextAuthOptions = ({
-//   providers: [
-//     GoogleProvider({
-//       clientId: process.env.GOOGLE_CLIENT_ID!,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-//     }),
-//   ],
-//   // outras configurações (callbacks, pages etc.)
-// })
-
-// export { handler as GET, handler as POST }
-
-// app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth"
+import NextAuth, { Account } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 
 const authOptions = {
@@ -23,9 +7,24 @@ const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization:{
+        params:{
+          scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
+        }
+      }
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+
+  callbacks:{
+    async signIn({ account }: { account: Account | null }){
+      if (!account || !account.scope?.includes('https://www.googleapis.com/auth/calendar')) {
+        return '/register/connect-calendar/?error=permissions';
+      }
+
+      return true;
+    }
+  }
 }
 
 const handler = NextAuth(authOptions)
